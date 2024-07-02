@@ -113,7 +113,7 @@ class Application(Tk):
 
     def update_content_text(self, event=None):
         filename = self.getnamefromtype()
-        str,str2 = ma.test1(filename)
+        str,str2 = ma.getstrfromfile(filename)
         self.counttext.delete('1.0', END)
         self.counttext.insert(END, str)
 

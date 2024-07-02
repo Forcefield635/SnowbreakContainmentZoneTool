@@ -13,10 +13,12 @@ import cv2
 
 from ControlEngine import controlengine
 from ImgHandle import imghandler
-from Record import rh
+from Record import rh, Record
+
 type_names = ['Begin', 'SpecialLimitedRole', 'SpecialLimitedWeapon', 'LimitedRole', 'LimitedWeapon', 'NormalRole',
               'NormalWeapon']
 type_names_ch = ["新手池", "限定角色不歪池", "限定武器不歪池", "限定角色池", "限定武器池", "常驻角色池", "常驻武器池"]
+
 
 def cleanfiles(path):
     """清理文件"""
@@ -24,7 +26,7 @@ def cleanfiles(path):
         os.makedirs(path)
     for root, dirs, files in os.walk(path, topdown=False):
         for name in files:
-            print("清理文件：",os.path.join(root, name))
+            print("清理文件：", os.path.join(root, name))
             os.remove(os.path.join(root, name))
         for name in dirs:
             print(os.path.join(root, name))
@@ -63,22 +65,30 @@ def generateRecordByType(name):
 
     # 备份并清空数据文件
     data_abspath = os.path.join(os.path.abspath('../data'), f'{name}.txt')
+    bakfile(data_abspath, "../data/bak/")
+    record_list_old_all = rh.getfromtxtfile(data_abspath)
     cleanfiles(data_abspath)
-    bakfile(data_abspath,"../data/bak/")
-    with open(data_abspath,"w", encoding='utf-8') as f:
-        f.write('')
+    # with open(data_abspath,"w", encoding='utf-8') as f:
+    #     f.write('')
+
     # 处理图片内容
-    print("开始处理图片"+img_abspath)
+    print("开始处理图片" + img_abspath)
     dirlist = os.listdir(img_abspath)
+    record_list_new_all = []
     for filename in dirlist:
         pic_path = os.path.join(img_abspath, filename)
         print('pic_path:', pic_path)
         img = cv2.imread(pic_path)
         ocr_list, level_list = imghandler.getlist(img)
-        record_list = imghandler.convert2record(ocr_list, level_list)
-        imghandler.saverecored(record_list, data_abspath, 'a')
+        record_list_temp = imghandler.convert2record(ocr_list, level_list)
+        record_list_new_all.extend(record_list_temp)
+        record_list_temp.clear()
 
-    print(f"完成处理{name}")
+    print(f"处理图片{img_abspath}完成，共得到{len(record_list_new_all)}条记录。")
+
+    record_list = rh.mergeRecord(record_list_new_all, record_list_old_all)
+    imghandler.saverecored(record_list, data_abspath, 'w')
+    print(f"完成处理{name}记录的获取。")
     return 0
 
 
@@ -99,30 +109,35 @@ def bakfile(srcfile, bakpath):
         timestr = time.strftime('%Y%m%d%H%M%S', time.localtime())
         fname = fname + timestr + ext
         shutil.copy(srcfile, bakpath + fname)  # 复制文件
-        print("bak %s -> %s" % (srcfile, bakpath + fname))
+        print("备份文件记录 %s -> %s" % (srcfile, bakpath + fname))
 
-def test1(filename):
+
+def getstrfromfile(filename):
     """
-    测试函数
+    从文件中获取字符串
     :param filename: 文件名
     :return:
     """
-    rlist = rh.generateRecordlistfromfile(filename)
+    rlist = rh.getfromtxtfile(filename)
     info = rh.collectInfofromRecord(rlist)
-    list1 = info[1][0]+info[1][1]
+    list1 = info[1][0] + info[1][1]
     list1 = sorted(list1, key=lambda x: x[0], reverse=False)
     print(list1)
-    sum,sum5,sum4,sum3 = info[0]
-    str =f"总计{sum}抽\n"
-    str +=f"五星数量：{sum5}\t概率：{sum5/sum:.2%}\n"
-    str +=f"四星数量：{sum4}\t概率：{sum4/sum:.2%}\n"
-    str +=f"三星数量：{sum3}\n"
+    sum, sum5, sum4, sum3 = info[0]
+    str1 = ""
+    if sum == 0:
+        str1 = "暂无抽卡记录"
+    else:
+        str1 = f"总计{sum}抽\n"
+        str1 += f"五星数量：{sum5}\t概率：{sum5 / sum:.2%}\n"
+        str1 += f"四星数量：{sum4}\t概率：{sum4 / sum:.2%}\n"
+        str1 += f"三星数量：{sum3}\n"
     str2 = ""
     for i in list1:
-        str2 += f"第{sum-i[0]+1}抽：{i[1]}\n"
-    print("maintest1")
-    return str,str2
+        str2 += f"第{sum - i[0] + 1}抽：{i[1]}\n"
+    print("getstrfromfile")
+    return str1, str2
+
 
 if __name__ == '__main__':
-
     pass

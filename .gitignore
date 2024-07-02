@@ -1,3 +1,6 @@
+.idea
 /date/bak/*.txt
 /date/*.txt
-/pic/
+/pic/*/*.png
+/pic/*/*.jpg
+__pycache__

@@ -118,7 +118,7 @@ class ImgHandle:
             date = ocr_lists[i * 3 + 2][1][0]
             level = level_list[i]
             record = Record(name, type, date, level)
-            record = rh.formatDate(record)
+            record = rh.correctcontent(record)
             record_list.append(record)
 
         print(f'data handle finished. record list len:{len(record_list)}')
