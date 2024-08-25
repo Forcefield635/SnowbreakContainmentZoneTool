@@ -4,3 +4,5 @@
 /pic/*/*.png
 /pic/*/*.jpg
 __pycache__
+/test
+/test/*
