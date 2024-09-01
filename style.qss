@@ -1,0 +1,13 @@
+AppInterface>PoolBox {
+    background-color: #fbf8f8;
+    border: 2px solid lightyellow;
+    border-radius: 10px;
+}
+
+PoolBox #title{
+    border: 2px solid #000000;
+    border-radius: 10px;
+}
+PoolBox>QLabel{
+    font-size: 14px;
+}

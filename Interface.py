@@ -1,3 +1,5 @@
+# TK做的界面不使用了
+"""
 from tkinter import *
 import Main as ma
 
@@ -40,12 +42,12 @@ class Application(Tk):
         btn0.bind('<Enter>', lambda event: event.widget.config(bg='#d3d3d3'))
         btn0.bind('<Leave>', lambda event: event.widget.config(bg='white'))
         btn0.pack(side=TOP, padx=2, pady=(2, 2), fill=X)
-        for index, item in enumerate(ma.type_names_ch):
+        for index, item in enumerate(ma.type_names_zh):
             btn = Button(self.leftframe, text=item, fg="black", bg='white', height=1, width=15,
                          activebackground='lightyellow',
                          font=("楷体", 16, "bold"))
             btn.pack(side=TOP, padx=2, pady=(2, 2), fill=X)
-            btn['command'] = lambda type=ma.type_names_ch[index]: self.left_btn_click(type=type)
+            btn['command'] = lambda type=ma.type_names_zh[index]: self.left_btn_click(type=type)
             btn.bind('<Enter>', lambda event: event.widget.config(bg='#d3d3d3'))
             btn.bind('<Leave>', lambda event: event.widget.config(bg='white'))
 
@@ -54,7 +56,7 @@ class Application(Tk):
         curTypeLab0 = Label(self.topframe, text="当前记录:", fg="black", bg="#add8e6", borderwidth=2,
                             font=("楷体", 17, "bold"))
         curTypeLab0.pack(side=LEFT, padx=1, pady=1, fill=X)
-        self.curType = ma.type_names_ch[0]
+        self.curType = ma.type_names_zh[0]
         self.curTypeLab = Label(self.topframe, text=self.curType, fg="black", bg="#add8e6", borderwidth=2,
                                 font=("楷体", 17, "bold"))
         self.curTypeLab.pack(side=LEFT, padx=1, pady=1, fill=X)
@@ -76,7 +78,7 @@ class Application(Tk):
 
     def getnamefromtype(self):
         index = 0
-        for i, item in enumerate(ma.type_names_ch):
+        for i, item in enumerate(ma.type_names_zh):
             if self.curType == item:
                 index = i
                 break
@@ -136,7 +138,7 @@ class Application(Tk):
 
     def queryRecords(self, event=None):
         curType = self.curType
-        for index, item in enumerate(ma.type_names_ch):
+        for index, item in enumerate(ma.type_names_zh):
             if curType == item:
                 break
         else:
@@ -162,3 +164,4 @@ def on_enter(event, button):
 if __name__ == '__main__':
     Application.start_loop()
     app = Application()
+"""

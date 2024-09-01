@@ -11,16 +11,61 @@ import time
 
 import cv2
 
+from enum import Enum
 from ControlEngine import controlengine
 from ImgHandler import imghandler
 from Record import *
 
-type_names = ['Begin', 'SpecialLimitedRole', 'SpecialLimitedWeapon', 'LimitedRole', 'LimitedWeapon', 'NormalRole',
-              'NormalWeapon']
-type_names_ch = ["新手池", "限定角色不歪池", "限定武器不歪池", "限定角色池", "限定武器池", "常驻角色池", "常驻武器池"]
+type_names = ['SpecialLimitedRole', 'SpecialLimitedWeapon', 'LimitedRole', 'LimitedWeapon', 'NormalRole',
+              'NormalWeapon','Begin' ]
+type_names_zh = [ "限定角色特选", "限定武器特选", "限定角色", "限定武器", "常驻角色", "常驻武器","新手池"]
 
+
+class PoolType(Enum):
+    SLR = 0, "SpecialLimitedRole", "限定角色特选"
+    SLW = 1, "SpecialLimitedWeapon", "限定武器特选"
+    LR = 2, "LimitedRole", "限定角色"
+    LW = 3, "LimitedWeapon", "限定武器"
+    NR = 4, "NormalRole", "常驻角色"
+    NW = 5, "NormalWeapon", "常驻武器"
+    BG = 6, "Begin", "新手池"
+    def __new__(cls, *args, **kwargs):
+        obj = object.__new__(cls)
+        obj._value_ = args[0]
+        return obj
+    def __init__(self, index, en_name, zh_name):
+        self._value_ = index
+        self.en_name = en_name
+        self.zh_name = zh_name
+    @classmethod
+    def get_en_name(cls, index):
+        for name, member in cls.__members__.items():
+            if member.value == index:
+                return member.en_name
+        return None
+
+    @classmethod
+    def get_zh_name(cls, index):
+        for name, member in cls.__members__.items():
+            if member.value == index:
+                return member.zh_name
+        return None
+
+    @classmethod
+    def get_index_by_en_name(cls, en_name):
+        for index in range(len(PoolType)):
+            if PoolType(index).en_name == en_name:
+                return index
+        return None
+    @classmethod
+    def get_index_by_zh_name(cls, zh_name):
+        for index in range(len(PoolType)):
+            if PoolType(index).zh_name == zh_name:
+                return index
+        return None
 
 g_backup_flag: bool = False  # 是否备份文件
+
 
 def cleanfiles(path):
     """清理文件"""
@@ -38,24 +83,23 @@ def cleanfiles(path):
     print(f"清理{path}，共清理{filenum}个文件，{dirnum}个文件夹。")
 
 
-def generateRecordByType(name):
+def generateRecordByEnType(name):
     """
     获取并更新保存指定类型抽卡记录
     :param name: 类型名称 type_names[index]
     :return:
     """
-
-    # 入参校验
-    for index in range(len(type_names)):
-        if name == type_names[index] or name == type_names_ch[index]:
-            name = type_names[index]
-            break
-    else:
-        print("未找到对应记录类型" + name)
+    # 入参校验,通过PoolType获取索引并校验
+    index = PoolType.get_index_by_en_name(name)
+    if index is None:
+        print(f"类型名称{name}不正确，请检查。")
         return 1
 
     # 前置窗口
-    controlengine.preWindow()
+    ret = controlengine.preWindow()
+    if ret != 0:
+        print("前置窗口操作失败，请检查是否已打开抽卡窗口")
+        return ret
 
     # 进入抽卡记录界面
     for i in range(3):
@@ -64,12 +108,11 @@ def generateRecordByType(name):
             print(f"进入抽卡记录界面")
             break
         elif ret == 1:
-            print(f"第{i+1}次尝试进入抽卡记录界面失败，请检查是否在抽卡界面")
+            print(f"第{i + 1}次尝试进入抽卡记录界面失败，请检查是否在抽卡界面")
             continue
         else:
-            print(f"第{i+1}次尝试进入抽卡记录界面失败，请检查是否在抽卡界面")
+            print(f"第{i + 1}次尝试进入抽卡记录界面失败，请检查是否在抽卡界面")
             return 1
-
 
     # 对抽卡记录进行保存截图
     # 1.先清空图片文件夹
@@ -170,10 +213,6 @@ def getstrfromfile(filename):
     return str1, str2
 
 
-if __name__ == '__main__':
-    pass
-
-
 def getPoolInfoByIndex(index):
     """
     获取指定池子的信息
@@ -188,3 +227,12 @@ def getPoolInfoByIndex(index):
     rlist = rh.getfromtxtfile(filename)
     info = rh.collectInfofromRecord(rlist)
     return info
+
+
+if __name__ == '__main__':
+    temp = PoolType.SLR
+    print(temp.zh_name)
+
+
+    print(PoolType.get_index_by_en_name("NormalRole"))
+    print(PoolType.get_index_by_zh_name("常驻角色"))

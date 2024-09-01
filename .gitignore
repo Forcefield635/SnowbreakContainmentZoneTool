@@ -1,6 +1,6 @@
 .idea
-/date/bak/*.txt
-/date/*.txt
+/data/bak/*.txt
+/data/*.txt
 /pic/*/*.png
 /pic/*/*.jpg
 __pycache__

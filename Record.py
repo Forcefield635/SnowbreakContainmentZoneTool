@@ -109,7 +109,13 @@ class RecordHandler:
         """
         获取记录数量
         :param record_list:
-        :return :
+        :return :info 字典:
+            total_num: 总记录数
+            start_5_num: 星级5记录数
+            start_4_num: 星级4记录数
+            start_3_num: 星级3记录数
+            start_5_details: 星级5记录详情 [index, record] index从1开始
+            start_4_details: 星级4记录详情 [index, record] index从1开始
         """
         info = {}
         total_num = len(record_list)
@@ -137,7 +143,7 @@ class RecordHandler:
 
         print(f'总记录数：{total_num}，星级5：{start_5_num}，星级4：{start_4_num}，星级3：{start_3_num}')
         # print(f'星级4记录：{record_4}')
-        print(f'星级5记录：{start_5_details}')
+        # print(f'星级5记录：{start_5_details}')
 
         return info
 
