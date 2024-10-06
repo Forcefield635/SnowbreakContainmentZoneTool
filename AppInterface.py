@@ -1,4 +1,4 @@
-from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtCore import Qt, pyqtSignal, pyqtSlot, QThread
 from PyQt6.QtGui import QPaintEvent, QPainter, QFont, QColor
 from PyQt6.QtWidgets import QWidget, QStyleOption, QStyle, QVBoxLayout, QLabel, QHBoxLayout, QFrame, QComboBox, QListWidgetItem
 
@@ -14,6 +14,7 @@ class PoolBox(QFrame):
     index: int = 0
     stands: list = []
     signal_update_info = pyqtSignal(int)
+
     def __init__(self, parent=None, text: str = 'default', index: int = 0):
         super().__init__(parent=parent)
         self.setObjectName('poolbox-' + text)
@@ -23,7 +24,7 @@ class PoolBox(QFrame):
         self.name_ch = AppInterface.choices_zh[index]
 
         self.showInitInfo()
-        self.updateInfo(self.index)
+        self.updateInfo_start(self.index)
 
     def showInitInfo(self):
         print('show init info')
@@ -83,17 +84,44 @@ class PoolBox(QFrame):
         self.topBoxLayout.addWidget(self.listWidget)
         self.setLayout(self.topBoxLayout)
 
-    def updateInfo(self, index: int = 0):
-        # todo: 加个index的判断，确保卡池正确
-        print(f'PoolBox 更新信息 index:{index}')
-        info = ma.getPoolInfoByIndex(self.index)
-        self.labelTotalNum_value.setText(str(info['total_num']))
-        self.label5Num_value.setText(str(info['start_5_num']))
-        self.label5Avg_value.setText(str(int(info['total_num'] / info['start_5_num'])))
-        self.label4Num_value.setText(str(info['start_4_num']))
-        # self.label4Avg_value.setText(str(int(info['total_num'] / info['start_4_num'])))
-        # 更新5星记录详情
-        self.updataInfoStands(info)
+    def updateInfo_start(self, index: int = 0):
+        # todo: 加个index的判断，确保卡池正确 切线程更新
+        """
+        更新卡池信息 线程启动
+        :return:
+        """
+        print(f"updatePoolInfo_start: {index}")
+        self.updataBoxThd = UpdataBoxThread(pool=self)
+        self.updataBoxThd.t_finished.connect(self.updateInfo_finish)
+        self.updataBoxThd.start()
+        print(f"开始更新卡池{index}的信息")
+
+        # print(f'PoolBox 更新信息 index:{index}')
+        # info = ma.getPoolInfoByIndex(self.index)  # 调用主程序获取卡池信息
+        # if info is None:
+        #     print(f"PoolBox 更新卡池信息失败 index:{index}")
+        #     return -1
+        # self.labelTotalNum_value.setText(str(info['total_num']))
+        # self.label5Num_value.setText(str(info['start_5_num']))
+        # if info['start_5_num'] != 0:
+        #     self.label5Avg_value.setText(str(int(info['total_num'] / info['start_5_num'])))
+        # self.label4Num_value.setText(str(info['start_4_num']))
+        # # self.label4Avg_value.setText(str(int(info['total_num'] / info['start_4_num'])))
+        # # 更新5星记录详情
+        # self.updataInfoStands(info)
+
+    def updateInfo_finish(self, ret: int):
+        """
+        更新卡池信息 线程结束
+        :param ret:
+        :return:
+        """
+        self.updataBoxThd.deleteLater()
+        if ret != 0:
+            print(f"更新失败 ret:{ret}")
+            return -1
+        print(f"更新成功")
+        return 0
 
     def updataInfoStands(self, info: dict):
         if 'start_5_details' not in info:
@@ -127,29 +155,110 @@ class PoolBox(QFrame):
             self.listWidget.addItem(item)
         return 1
 
-        # 外部信号连接
-    def update_info(index: int):
-        self.updateInfo(index)
+
+class QueryBoxThread(QThread):
+    t_finished = pyqtSignal(int)
+    boxtype = "默认"
+
+    def __init__(self, parent=None, boxtype="默认"):
+        super().__init__(parent=parent)
+        self.boxtype = boxtype
+
+    def run(self):
+        print(f'QueryBox线程 开始执行Type:{self.boxtype}')
+        index = ma.PoolType.get_index_by_zh_name(self.boxtype)
+        if index is None:
+            print(f"未找到对应记录类型 Type: {self.boxtype}")
+            self.t_finished.emit(-1)  # 发送错误信号
+            return
+
+        print(f"QueryBox线程 开始查询({ma.type_names[index]})的记录")
+        ret = ma.generateRecordByEnType(ma.type_names[index])
+        if ret != 0:
+            print(f"QueryBox线程 查询({ma.type_names[index]})抽卡记录失败 ret:{ret}")
+            self.t_finished.emit(ret)  # 发送错误信号
+            return
+
+        print(f"QueryBox线程 ({ma.type_names[index]})查询成功")
+        self.t_finished.emit(ret)  # 发送成功信号
+
+
+class UpdataBoxThread(QThread):
+    t_finished = pyqtSignal(int)
+
+    def __init__(self, parent=None, pool: PoolBox = None):
+        super().__init__(parent=parent)
+        self.pool = pool
+
+    def run(self):
+
+        if self.pool is None:
+            print(f"UpdataBox线程 卡池为空")
+            self.t_finished.emit(-1)  # 发送错误信号
+            return
+        pool = self.pool
+        print(f'UpdataBox线程 开始执行 index:{pool.index}')
+
+        info = ma.getPoolInfoByIndex(pool.index)  # 调用主程序获取卡池信息
+        if info is None:
+            print(f"PoolBox 更新卡池信息失败 index:{pool.index}")
+            self.t_finished.emit(-2)  # 发送错误信号
+            return
+        pool.labelTotalNum_value.setText(str(info['total_num']))
+        pool.label5Num_value.setText(str(info['start_5_num']))
+        if info['start_5_num'] != 0:
+            pool.label5Avg_value.setText(str(int(info['total_num'] / info['start_5_num'])))
+        pool.label4Num_value.setText(str(info['start_4_num']))
+        # self.label4Avg_value.setText(str(int(info['total_num'] / info['start_4_num'])))
+        # 更新5星记录详情
+        pool.updataInfoStands(info)
+        self.t_finished.emit(0)  # 发送成功信号
+
+
 class SummaryBox(QFrame):
+    """
+    左侧整体预览
+    """
     summary_signal = pyqtSignal(list)
     update_poolbox_signal = pyqtSignal(int)
+
     def __init__(self, parent=None):
         super().__init__(parent=parent)
+        self.queryBoxThd = None
         self.setObjectName('summarybox')
         self.setFixedWidth(220)
         self.initInfo()
 
     def initInfo(self):
+        # 设置各个池子抽卡已垫付的数量
+        label_tit = QLabel('各池当前已垫记录概览', self)
+        label_SLR = QLabel('限定角色特选:', self)
+        label_SLW = QLabel('限定武器特选:', self)
+        label_LR = QLabel('限定角色:', self)
+        label_LW = QLabel('限定武器:', self)
+        label_NR = QLabel('常驻角色:', self)
+        label_NW = QLabel('常驻武器:', self)
+
+        sum_layout = QVBoxLayout()
+        sum_layout.addWidget(label_tit)
+        sum_layout.addWidget(label_SLR)
+        sum_layout.addWidget(label_SLW)
+        sum_layout.addWidget(label_LR)
+        sum_layout.addWidget(label_LW)
+        sum_layout.addWidget(label_NR)
+        sum_layout.addWidget(label_NW)
+
         # 设置查询框
         self.combobox = QComboBox(self)
         self.combobox.addItems(AppInterface.choices_zh)
         self.combobox.setCurrentIndex(0)
         self.button_queryRecord = PushButton('查询记录', self)
-        self.button_queryRecord.clicked.connect(self.queryRecords)
+        self.button_queryRecord.clicked.connect(self.queryRecords_start)
         self.selectLayout = QHBoxLayout()
         self.selectLayout.addWidget(self.combobox)
         self.selectLayout.addWidget(self.button_queryRecord)
 
+        label_box = QLabel('选择详情展示', self)
         # 设置checkBox
         self.checkboxes = [
             CheckBox("限定角色特选", parent=self),
@@ -186,7 +295,9 @@ class SummaryBox(QFrame):
 
         # 设置整体布局
         self.summaryVBoxLayout = QVBoxLayout(self)
+        self.summaryVBoxLayout.addLayout(sum_layout)
         self.summaryVBoxLayout.addLayout(self.selectLayout)
+        self.summaryVBoxLayout.addWidget(label_box)
         self.summaryVBoxLayout.addLayout(self.checkboxLayout)
         self.setLayout(self.summaryVBoxLayout)
 
@@ -219,28 +330,48 @@ class SummaryBox(QFrame):
         self.checkBox_All.blockSignals(False)
         self.send_checked_list()
 
-    def queryRecords(self):
-        curType = self.combobox.currentText()
-        print('query record:' + curType)
-        index = ma.PoolType.get_index_by_zh_name(curType)
-        print(f'index:{index}')
-        if index is None:
-            print("未找到对应记录类型 Type: %s" % curType)
-            return
-
-        print(f"开始查询({index})的记录")
-        ret = ma.generateRecordByEnType(ma.type_names[index])
-        if ret != 0:
-            print(f"查询失败ret:{ret}")
-            return
-        print(f"查询{AppInterface.choices_en[index]}的记录成功")
-        self.update_poolbox_signal.emit(index)
-
     def send_checked_list(self):
         checked_list = []
         for checkbox in self.checkboxes:
             checked_list.append((checkbox.text(), int(checkbox.isChecked())))
+
+        #  发送信号给 AppInterface 的 updatePoolInfo 方法
         self.summary_signal.emit(checked_list)
+
+    def queryRecords_start(self):
+        """
+        查询记录 线程启动
+        :return:
+        """
+        curType = self.combobox.currentText()
+        print('query record:' + curType)
+        # 把按钮禁用，防止多次点击
+        self.button_queryRecord.setEnabled(False)
+
+        self.queryBoxThd = QueryBoxThread(boxtype=curType)
+        self.queryBoxThd.t_finished.connect(self.queryRecords_finish)
+        self.queryBoxThd.start()
+        print(f"开始查询{curType}的记录")
+
+    def queryRecords_finish(self, ret: int):
+        """
+        查询记录 线程结束
+        :param ret:
+        :return:
+        """
+        # 启用按钮
+        self.button_queryRecord.setEnabled(True)
+        self.queryBoxThd.deleteLater()
+        if ret != 0:
+            print(f"查询失败 ret:{ret}")
+            return -1
+        print(f"queryRecords_finish 查询成功")
+
+        # # 发送信号给 AppInterface的更新方法
+        index = ma.PoolType.get_index_by_zh_name(self.combobox.currentText())
+        print(f"发送信号给 AppInterface的更新方法 index:{index}")
+        self.update_poolbox_signal.emit(index)
+        return 0
 
 
 # 定义一个抽卡详情界面
@@ -271,7 +402,7 @@ class AppInterface(QFrame):
         self.summaryBox = SummaryBox(self)
         self.all_h_layout.addWidget(self.summaryBox)
         self.summaryBox.summary_signal.connect(self.showorhidePoolBox)
-        self.summaryBox.update_poolbox_signal.connect(self.updatePoolInfo)
+        self.summaryBox.update_poolbox_signal.connect(self.updateAppPoolInfo)
 
     def poolInit(self, text: str):
         for index, item in enumerate(self.choices_en):
@@ -284,9 +415,9 @@ class AppInterface(QFrame):
                 self.poolboxlist[index].hide()
             # self.all_h_layout.addLayout(box.conLayout)
 
-    def updatePoolInfo(self, index: int = 0):
+    def updateAppPoolInfo(self, index: int = 0):
         print(f'App更新记录信息 index:{index}')
-        self.poolboxlist[index].updateInfo(index)
+        self.poolboxlist[index].updateInfo_start(index)
 
     def showorhidePoolBox(self, checked_list: list):
         print(f"print_signal: {checked_list}")

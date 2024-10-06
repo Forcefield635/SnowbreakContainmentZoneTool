@@ -4,6 +4,7 @@ import pyautogui
 import os
 import Main
 
+
 def auto_click(var_avg, t=1.0, isdouble=False):
     if isdouble:
         pyautogui.doubleClick(var_avg[0], var_avg[1], button='left')
@@ -27,6 +28,7 @@ def get_img_box(image, confidence=0.9, box=None):
     else:
         return box
 
+
 def get_img_box(image, confidence=1.0, box=None):
     """根据图像和置信度查找屏幕上的图像位置，可指定区域"""
     try:
@@ -41,16 +43,12 @@ def get_img_box(image, confidence=1.0, box=None):
         return box
 
 
-
-
-
 class ControlEngine:
     """控制引擎类，用于执行各种自动化操作"""
 
     def __init__(self):
         self.type_names = ['Begin', 'SpecialLimitedRole', 'SpecialLimitedWeapon', 'LimitedRole', 'LimitedWeapon',
                            'NormalRole', 'NormalWeapon']
-
 
     def __isHome(self):
         """判断是否在主界面"""
@@ -138,7 +136,7 @@ class ControlEngine:
 
         if name in pool_click_positions:
             for pos in pool_click_positions[name]:
-                auto_click(pos)
+                auto_click(pos, 2)
         else:
             print(f"未知的卡池名称: {name}")
             return 1
@@ -157,10 +155,10 @@ class ControlEngine:
             print(f'选择卡池失败{name}')
             return ret
         # 点击卡池介绍
-        auto_click([2500, 190],1, isdouble=True)
+        auto_click([2500, 190], 2, isdouble=True)
         pos2 = get_img_box('./template/viewrecord.png', box=(1347, 72, 270, 80))
         if pos2 is not None:
-            auto_click(pyautogui.center(pos2),isdouble=True)
+            auto_click(pyautogui.center(pos2), 2, isdouble=True)
             print('点击查看记录')
         else:
             return 1

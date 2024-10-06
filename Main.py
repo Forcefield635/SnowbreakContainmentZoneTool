@@ -153,13 +153,16 @@ def generateRecordByEnType(name):
     print(f"处理图片{img_abspath}完成，共得到{len(record_list_new_all)}条记录。")
 
     record_list = rh.mergeRecord(record_list_new_all, record_list_old_all)
-    imghandler.saverecored(record_list, data_abspath, 'w')
-
+    ret = imghandler.saverecored(record_list, data_abspath, 'w')
+    if ret == 0:
+        print(f"保存{name}记录数据文件成功。")
+    else:
+        print(f"保存{name}记录数据文件失败。")
     # 清空图片文件夹
     cleanfiles(img_abspath)
     print(f"完成处理{name}记录的获取。")
 
-    return 0
+    return ret
 
 
 def bakfile(srcfile, bakpath):

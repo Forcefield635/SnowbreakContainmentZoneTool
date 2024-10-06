@@ -132,6 +132,9 @@ class ImgHandler:
         :param file_type:
         :return:
         """
+        if record_list is None or len(record_list) == 0:
+            print('record_list is empty')
+            return 1
         file = open(output_path, file_type, encoding='utf-8')
         for record in record_list:
             file.writelines(str(record) + '\n')
