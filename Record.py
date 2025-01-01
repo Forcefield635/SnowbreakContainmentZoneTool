@@ -28,6 +28,12 @@ class Record:
 
 
 class RecordHandler:
+    _instance = None # 单例模式
+    def __new__(cls, *args, **kwargs):
+        if not cls._instance:
+            cls._instance = super(RecordHandler, cls).__new__(cls)
+        return cls._instance
+
     def __init__(self):
         pass
 
@@ -111,6 +117,7 @@ class RecordHandler:
         :param record_list:
         :return :info 字典:
             total_num: 总记录数
+            already_drawn_num: 已垫抽数
             start_5_num: 星级5记录数
             start_4_num: 星级4记录数
             start_3_num: 星级3记录数
@@ -119,6 +126,7 @@ class RecordHandler:
         """
         info = {}
         total_num = len(record_list)
+        already_drawn_num = -1  # 已垫抽数
         start_3_num = 0
         start_4_num = 0
         start_5_num = 0
@@ -133,15 +141,18 @@ class RecordHandler:
             elif record.rarity == 5:
                 start_5_num += 1
                 start_5_details.append([index + 1, str(record)])
+                if already_drawn_num == -1:
+                    already_drawn_num = index
 
         info['total_num'] = total_num
+        info['already_drawn_num'] = already_drawn_num
         info['start_5_num'] = start_5_num
         info['start_4_num'] = start_4_num
         info['start_3_num'] = start_3_num
         info['start_5_details'] = copy.deepcopy(start_5_details)
         info['start_4_details'] = copy.deepcopy(start_4_details)
 
-        print(f'总记录数：{total_num}，星级5：{start_5_num}，星级4：{start_4_num}，星级3：{start_3_num}')
+        print(f'总记录数：{total_num}，星级5：{start_5_num}，星级4：{start_4_num}，星级3：{start_3_num}, 已垫抽数：{already_drawn_num}')
         # print(f'星级4记录：{record_4}')
         # print(f'星级5记录：{start_5_details}')
 
@@ -198,11 +209,13 @@ class RecordHandler:
         return None
 
 
-rh = RecordHandler()
 
 if __name__ == '__main__':
-    record1 = Record('琴诺-悖谬', '角色', '2024-04-20 00:54', 5)
-    record1.name = '123'
-    # print(record1.__dict__)
-    rh = RecordHandler()
-    rh.savetojsonfile([record1], 'testtest.json')
+
+    rh  = RecordHandler()
+    rh2 = RecordHandler()
+    if rh == rh2:
+        print("单例模式测试成功")
+    else:
+        print("单例模式测试失败")
+

@@ -10,16 +10,19 @@ import shutil
 import time
 
 import cv2
+import ImgHandler
 
 from enum import Enum
 from ControlEngine import controlengine
-from ImgHandler import imghandler
-from Record import *
 
+from Record import *
+from ImgHandler import *
 type_names = ['SpecialLimitedRole', 'SpecialLimitedWeapon', 'LimitedRole', 'LimitedWeapon', 'NormalRole',
               'NormalWeapon','Begin' ]
 type_names_zh = [ "限定角色特选", "限定武器特选", "限定角色", "限定武器", "常驻角色", "常驻武器","新手池"]
 
+g_record_handler = RecordHandler()
+g_img_handler = ImgHandler()
 
 class PoolType(Enum):
     SLR = 0, "SpecialLimitedRole", "限定角色特选"
@@ -132,28 +135,28 @@ def generateRecordByEnType(name):
     if g_backup_flag is False:  # 第一次备份对应记录
         bakfile(data_abspath, "./data/bak/")
         g_backup_flag = True
-    record_list_old_all = rh.getfromtxtfile(data_abspath)  # 读取旧数据
+
+    record_list_old_all = g_record_handler.getfromtxtfile(data_abspath)  # 读取旧数据
     cleanfiles(data_abspath)  # 清空数据文件
     # with open(data_abspath,"w", encoding='utf-8') as f:
     #     f.write('')
 
     # 处理图片内容
-    print("开始处理图片" + img_abspath)
+    print("main.py 开始处理图片" + img_abspath)
     dirlist = os.listdir(img_abspath)
     record_list_new_all = []
     for filename in dirlist:
         pic_path = os.path.join(img_abspath, filename)
-        print('pic_path:', pic_path)
+        print('main.py 处理图片:', pic_path)
         img = cv2.imread(pic_path)
-        ocr_list, level_list = imghandler.getlist(img)
-        record_list_temp = imghandler.convert2record(ocr_list, level_list)
+        ocr_list, level_list = g_img_handler.getlist(img)
+        record_list_temp = g_img_handler.convert2record(ocr_list, level_list)
         record_list_new_all.extend(record_list_temp)
         record_list_temp.clear()
 
-    print(f"处理图片{img_abspath}完成，共得到{len(record_list_new_all)}条记录。")
-
-    record_list = rh.mergeRecord(record_list_new_all, record_list_old_all)
-    ret = imghandler.saverecored(record_list, data_abspath, 'w')
+    print(f"main.py 处理图片{img_abspath}完成，共得到{len(record_list_new_all)}条记录。")
+    record_list = g_record_handler.mergeRecord(record_list_new_all, record_list_old_all)
+    ret = g_img_handler.saverecored(record_list, data_abspath, 'w')
     if ret == 0:
         print(f"保存{name}记录数据文件成功。")
     else:
@@ -191,8 +194,8 @@ def getstrfromfile(filename):
     :param filename: 文件名
     :return:
     """
-    rlist = rh.getfromtxtfile(filename)
-    info = rh.collectInfofromRecord(rlist)
+    rlist = g_record_handler.getfromtxtfile(filename)
+    info = g_record_handler.collectInfofromRecord(rlist)
     list1 = info['start_5_details']
     list1 = sorted(list1, key=lambda x: x[0], reverse=False)
     # print(list1)
@@ -227,15 +230,10 @@ def getPoolInfoByIndex(index):
         return None
     type_name = type_names[index]
     filename = f"./data/{type_name}.txt"
-    rlist = rh.getfromtxtfile(filename)
-    info = rh.collectInfofromRecord(rlist)
+    rlist = g_record_handler.getfromtxtfile(filename)
+    info = g_record_handler.collectInfofromRecord(rlist)
     return info
 
 
 if __name__ == '__main__':
-    temp = PoolType.SLR
-    print(temp.zh_name)
-
-
-    print(PoolType.get_index_by_en_name("NormalRole"))
-    print(PoolType.get_index_by_zh_name("常驻角色"))
+    pass

@@ -6,7 +6,8 @@
 
 import cv2
 from paddleocr import PaddleOCR
-from Record import Record,rh
+from Record import *
+
 
 class LevelHandle():
     """
@@ -56,10 +57,19 @@ class ImgHandler:
     """
     图片处理类
     """
+    _instance = None
+    __ocr_engine = None
+    def __new__(cls, *args, **kwargs):
+        if not cls._instance:
+            cls._instance = super().__new__(cls)
+        return cls._instance
 
     def __init__(self, ):
         self.__ocr_engine = PaddleOCR(lang='ch', show_log=False, use_gpu=False, drop_score=0.7, use_angle_cls=False)
         self.lh = LevelHandle()
+
+    def _updataOCREngine(self, lang='ch', show_log=False, use_gpu=False, drop_score=0.7, use_angle_cls=False):
+        self.__ocr_engine = PaddleOCR(lang=lang, show_log=show_log, use_gpu=use_gpu, drop_score=drop_score, use_angle_cls=use_angle_cls)
 
     def getlist(self, img) -> (list, list):
         """
@@ -84,7 +94,8 @@ class ImgHandler:
         ret, img = cv2.threshold(table_img, 190, 255, cv2.THRESH_BINARY)
         # ocr识别输出列表格式 [ [[[左上坐标],[右上坐标],[右下坐标],[左下坐标]], ('识别内容', 置信度)], ... ]
         # [[[2432.0, 74.0], [2509.0, 74.0], [2509.0, 148.0], [2432.0, 148.0]], ('α', 0.5288054943084717)]
-        ocr_lists = self.__ocr_engine.ocr(table_img)[0]
+        self._updataOCREngine()  ## 这里更新 ocr 引擎
+        ocr_lists = self.__ocr_engine.ocr(table_img)[0]  ## 这一行在多次ocr识别时,如果不重新初始化ocr引擎会出现问题，原因未知
 
         print(f'img handle finished. ocr list len:{len(ocr_lists)}')
         return ocr_lists, level_list
@@ -118,7 +129,8 @@ class ImgHandler:
             date = ocr_lists[i * 3 + 2][1][0]
             level = level_list[i]
             record = Record(name, type, date, level)
-            record = rh.correctcontent(record)
+
+            # record = rh.correctcontent(record)  # 内容纠错
             record_list.append(record)
 
         print(f'data handle finished. record list len:{len(record_list)}')
@@ -142,4 +154,19 @@ class ImgHandler:
         file.close()
         return 0
 
-imghandler = ImgHandler()
+
+# imghandler = ImgHandler()
+
+if __name__ == '__main__':
+    img = ImgHandler()
+    img2 = ImgHandler()
+
+    if img == img2:
+        print('same instance')
+    else:
+        print('not same instance')
+
+    if img._ImgHandler__ocr_engine == img2._ImgHandler__ocr_engine:
+        print('same ocr engine')
+    else:
+        print('not same ocr engine')

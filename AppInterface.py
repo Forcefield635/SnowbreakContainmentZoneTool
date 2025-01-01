@@ -28,7 +28,7 @@ class PoolBox(QFrame):
 
     def showInitInfo(self):
         print('show init info')
-        self.topBoxLayout = QVBoxLayout(self)
+
         self.labelTitle = QLabel(self.name_ch, self)
         self.labelTitle.setObjectName('title')
         self.labelTitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -36,6 +36,8 @@ class PoolBox(QFrame):
 
         self.labelTotalNum = QLabel(parent=self, objectName='total-num', text='总计抽卡数量:')
         self.labelTotalNum_value = QLabel(parent=self, objectName='total-num-value', text='0')
+        self.labelAlreadyNum = QLabel(parent=self, objectName='already-num', text='已垫抽卡数量:')
+        self.labelAlreadyNum_value = QLabel(parent=self, objectName='already-num-value', text='0')
         self.label5Num = QLabel(parent=self, objectName='5-num', text='5星共计:')
         self.label5Num_value = QLabel(parent=self, objectName='5-num-value', text='0')
         self.label5Avg = QLabel(parent=self, objectName='5-avg', text='5星平均抽数:')
@@ -45,6 +47,28 @@ class PoolBox(QFrame):
         # self.label4Avg = QLabel(parent=self, objectName='4-avg', text='4星平均抽数:')
         # self.label4Avg_value = QLabel(parent=self, objectName='4-avg-value', text='0')
 
+
+
+        self.vBoxLayout_box2_left = QVBoxLayout()
+        self.vBoxLayout_box2_left.addWidget(self.labelTotalNum)
+        self.vBoxLayout_box2_left.addWidget(self.labelAlreadyNum)
+        self.vBoxLayout_box2_left.addWidget(self.label5Num)
+        self.vBoxLayout_box2_left.addWidget(self.label5Avg)
+        self.vBoxLayout_box2_left.addWidget(self.label4Num)
+
+        self.vBoxLayout_box2_right = QVBoxLayout()
+        self.vBoxLayout_box2_right.addWidget(self.labelTotalNum_value)
+        self.vBoxLayout_box2_right.addWidget(self.labelAlreadyNum_value)
+        self.vBoxLayout_box2_right.addWidget(self.label5Num_value)
+        self.vBoxLayout_box2_right.addWidget(self.label5Avg_value)
+        self.vBoxLayout_box2_right.addWidget(self.label4Num_value)
+
+
+        self.conLayout = QHBoxLayout()
+        self.conLayout.addLayout(self.vBoxLayout_box2_left)
+        self.conLayout.addLayout(self.vBoxLayout_box2_right)
+
+        # 5 星记录详情
         self.listWidget = ListWidget(self)
         # self.listWidget = QListWidget(self)
         self.listWidget.setObjectName('stands-list')
@@ -52,33 +76,8 @@ class PoolBox(QFrame):
         self.listWidget.setMinimumWidth(200)
         self.listWidget.setAlternatingRowColors(True)  # 设置交替行颜色
 
-        # 先暂时不初始化
-        # for stand in self.stands:
-        #     item = QListWidgetItem(stand)
-        #     item.setIcon(QIcon(':/qfluentwidgets/images/logo.png'))
-        #     # item.setIcon(QIcon(':/qfluentwidgets/images/logo.png'))
-        #     # item.setCheckState(Qt.CheckState.Unchecked)
-        #     self.listWidget.addItem(item)
-
-        self.vBoxLayout_box2_left = QVBoxLayout()
-        self.vBoxLayout_box2_left.addWidget(self.labelTotalNum)
-        self.vBoxLayout_box2_left.addWidget(self.label5Num)
-        self.vBoxLayout_box2_left.addWidget(self.label5Avg)
-        self.vBoxLayout_box2_left.addWidget(self.label4Num)
-        # self.vBoxLayout_box2_left.addWidget(self.label4Avg)
-
-        self.vBoxLayout_box2_right = QVBoxLayout()
-        self.vBoxLayout_box2_right.addWidget(self.labelTotalNum_value)
-        self.vBoxLayout_box2_right.addWidget(self.label5Num_value)
-        self.vBoxLayout_box2_right.addWidget(self.label5Avg_value)
-        self.vBoxLayout_box2_right.addWidget(self.label4Num_value)
-        # self.vBoxLayout_box2_right.addWidget(self.label4Avg_value)
-
-        self.conLayout = QHBoxLayout()
-        self.conLayout.addLayout(self.vBoxLayout_box2_left)
-        self.conLayout.addLayout(self.vBoxLayout_box2_right)
-
         # 设置整体布局
+        self.topBoxLayout = QVBoxLayout(self)
         self.topBoxLayout.addWidget(self.labelTitle)
         self.topBoxLayout.addLayout(self.conLayout)
         self.topBoxLayout.addWidget(self.listWidget)
@@ -205,6 +204,8 @@ class UpdataBoxThread(QThread):
             self.t_finished.emit(-2)  # 发送错误信号
             return
         pool.labelTotalNum_value.setText(str(info['total_num']))
+        self.setAlreadyDrawnNum(pool, info['already_drawn_num'], pool.index)
+        # pool.labelAlreadyNum_value.setText(str(info['already_drawn_num']))
         pool.label5Num_value.setText(str(info['start_5_num']))
         if info['start_5_num'] != 0:
             pool.label5Avg_value.setText(str(int(info['total_num'] / info['start_5_num'])))
@@ -214,6 +215,29 @@ class UpdataBoxThread(QThread):
         pool.updataInfoStands(info)
         self.t_finished.emit(0)  # 发送成功信号
 
+    def setAlreadyDrawnNum(self, pool: PoolBox, num: int, index: int):
+        """
+        设置卡池已抽卡数量
+        :param pool:
+        :param num:
+        :param index:
+        :return:
+        """
+        if index == 0:
+            pool.labelAlreadyNum_value.setText(str(num)+ "/100")
+        elif index == 1:
+            pool.labelAlreadyNum_value.setText(str(num)+ "/80")
+        elif index == 2:
+            pool.labelAlreadyNum_value.setText(str(num)+ "/80")
+        elif index == 3:
+            pool.labelAlreadyNum_value.setText(str(num)+ "/60")
+        elif index == 4:
+            pool.labelAlreadyNum_value.setText(str(num)+ "/80")
+        elif index == 5:
+            pool.labelAlreadyNum_value.setText(str(num)+ "/60")
+        elif index == 6:
+            pool.labelAlreadyNum_value.setText(str(num)+ "/50")
+        return 0
 
 class SummaryBox(QFrame):
     """

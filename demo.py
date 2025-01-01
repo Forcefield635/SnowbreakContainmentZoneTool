@@ -26,12 +26,6 @@ class Widget(QFrame):
         self.setObjectName(text.replace(' ', '-'))
 
 
-
-def testPrint(str):
-    print('test print:' + str)
-
-
-
 # 主窗口类，继承自MSFluentWindow
 class Window(MSFluentWindow):
 
