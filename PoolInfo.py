@@ -19,7 +19,7 @@ class PoolInfo:
             self.records = copy.deepcopy(records)
 
     def initInfo(self):
-        info = rh.collectInfofromRecord(self.records)
+        info = RecordHandler.collectInfofromRecord(self.records)
         self.total_num = info['total_num']
         self.alrady_drawn_num = info['alrady_drawn_num']
         self.start_5_num = info['start_5_num']

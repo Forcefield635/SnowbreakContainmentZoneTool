@@ -181,7 +181,7 @@ class RecordHandler:
         # 预期可以在list1中找到list2的第一条记录，然后将list2的记录插入到list1的对应位置
         index = 0xffff
         mate_index = 0
-        mate_count = 4
+        mate_count = 2 # 需要匹配的记录数
         for i, record in enumerate(record_list_new):
             if record == record_list_old[mate_index]:
                 mate_index += 1

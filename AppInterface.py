@@ -158,13 +158,14 @@ class PoolBox(QFrame):
 class QueryBoxThread(QThread):
     t_finished = pyqtSignal(int)
     boxtype = "默认"
-
-    def __init__(self, parent=None, boxtype="默认"):
+    query_type = 1
+    def __init__(self, parent=None, boxtype="默认", query_type=1):
         super().__init__(parent=parent)
         self.boxtype = boxtype
+        self.query_type = query_type
 
     def run(self):
-        print(f'QueryBox线程 开始执行Type:{self.boxtype}')
+        print(f'QueryBox线程 开始执行Type:{self.boxtype} 查询方式：{self.query_type}')
         index = ma.PoolType.get_index_by_zh_name(self.boxtype)
         if index is None:
             print(f"未找到对应记录类型 Type: {self.boxtype}")
@@ -172,7 +173,14 @@ class QueryBoxThread(QThread):
             return
 
         print(f"QueryBox线程 开始查询({ma.type_names[index]})的记录")
-        ret = ma.generateRecordByEnType(ma.type_names[index])
+        if self.query_type == 1:
+            ret = ma.generateRecordByEnType(ma.type_names[index])
+        elif self.query_type == 0:
+            ret = ma.generateRecordDict(ma.type_names[index])
+        else:
+            print(f"QueryBox线程 未知查询方式 {self.query_type}")
+            ret = -1
+
         if ret != 0:
             print(f"QueryBox线程 查询({ma.type_names[index]})抽卡记录失败 ret:{ret}")
             self.t_finished.emit(ret)  # 发送错误信号
@@ -255,22 +263,11 @@ class SummaryBox(QFrame):
 
     def initInfo(self):
         # 设置各个池子抽卡已垫付的数量
-        label_tit = QLabel('各池当前已垫记录概览', self)
-        label_SLR = QLabel('限定角色特选:', self)
-        label_SLW = QLabel('限定武器特选:', self)
-        label_LR = QLabel('限定角色:', self)
-        label_LW = QLabel('限定武器:', self)
-        label_NR = QLabel('常驻角色:', self)
-        label_NW = QLabel('常驻武器:', self)
+        # label_tit = QLabel('一个648有50抽', self)
 
-        sum_layout = QVBoxLayout()
-        sum_layout.addWidget(label_tit)
-        sum_layout.addWidget(label_SLR)
-        sum_layout.addWidget(label_SLW)
-        sum_layout.addWidget(label_LR)
-        sum_layout.addWidget(label_LW)
-        sum_layout.addWidget(label_NR)
-        sum_layout.addWidget(label_NW)
+        # sum_layout = QVBoxLayout()
+        # sum_layout.addWidget(label_tit)
+
 
         # 设置查询框
         self.combobox = QComboBox(self)
@@ -278,11 +275,17 @@ class SummaryBox(QFrame):
         self.combobox.setCurrentIndex(0)
         self.button_queryRecord = PushButton('查询记录', self)
         self.button_queryRecord.clicked.connect(self.queryRecords_start)
+
+
+        # 加一个勾选框，设置查询方式，1 从界面开始查，0 从记录还是查
+        self.checkbox_query_type = CheckBox("查询方式", parent=self)
+        self.checkbox_query_type.setChecked(True)
         self.selectLayout = QHBoxLayout()
         self.selectLayout.addWidget(self.combobox)
         self.selectLayout.addWidget(self.button_queryRecord)
+        self.selectLayout.addWidget(self.checkbox_query_type)
 
-        label_box = QLabel('选择详情展示', self)
+
         # 设置checkBox
         self.checkboxes = [
             CheckBox("限定角色特选", parent=self),
@@ -319,9 +322,8 @@ class SummaryBox(QFrame):
 
         # 设置整体布局
         self.summaryVBoxLayout = QVBoxLayout(self)
-        self.summaryVBoxLayout.addLayout(sum_layout)
+        # self.summaryVBoxLayout.addLayout(sum_layout)
         self.summaryVBoxLayout.addLayout(self.selectLayout)
-        self.summaryVBoxLayout.addWidget(label_box)
         self.summaryVBoxLayout.addLayout(self.checkboxLayout)
         self.setLayout(self.summaryVBoxLayout)
 
@@ -372,7 +374,7 @@ class SummaryBox(QFrame):
         # 把按钮禁用，防止多次点击
         self.button_queryRecord.setEnabled(False)
 
-        self.queryBoxThd = QueryBoxThread(boxtype=curType)
+        self.queryBoxThd = QueryBoxThread(boxtype=curType, query_type=int(self.checkbox_query_type.isChecked()))
         self.queryBoxThd.t_finished.connect(self.queryRecords_finish)
         self.queryBoxThd.start()
         print(f"开始查询{curType}的记录")

@@ -168,6 +168,68 @@ def generateRecordByEnType(name):
     return ret
 
 
+
+def generateRecordDict(name):
+    """
+    直接在记录界面开始查询
+    :param name: 类型名称 type_names_zh[index]
+    :return:
+    """
+    # 入参校验,通过PoolType获取索引并校验
+    index = PoolType.get_index_by_en_name(name)
+    if index is None:
+        print(f"类型名称{name}不正确，请检查。")
+        return 1
+    # 对抽卡记录进行保存截图
+    # 1.先清空图片文件夹
+    # 2.进入抽卡记录界面
+    # 3.保存截图
+    # 4.处理图片内容
+    # 5.保存数据文件
+    img_abspath = os.path.join(os.path.abspath('./pic'), name)  # 图片保存路径
+    cleanfiles(img_abspath)
+    picnum = controlengine.saveRecordImg(name)
+    print(f"保存{picnum}张{name}记录截图。")
+    controlengine.goHome()
+
+    # 备份并清空数据文件
+    data_abspath = os.path.join(os.path.abspath('./data'), f'{name}.txt')
+    global g_backup_flag
+    if g_backup_flag is False:  # 第一次备份对应记录
+        bakfile(data_abspath, "./data/bak/")
+        g_backup_flag = True
+
+    record_list_old_all = g_record_handler.getfromtxtfile(data_abspath)  # 读取旧数据
+    cleanfiles(data_abspath)  # 清空数据文件
+    # with open(data_abspath,"w", encoding='utf-8') as f:
+    #     f.write('')
+
+    # 处理图片内容
+    print("main.py 开始处理图片" + img_abspath)
+    dirlist = os.listdir(img_abspath)
+    record_list_new_all = []
+    for filename in dirlist:
+        pic_path = os.path.join(img_abspath, filename)
+        print('main.py 处理图片:', pic_path)
+        img = cv2.imread(pic_path)
+        ocr_list, level_list = g_img_handler.getlist(img)
+        record_list_temp = g_img_handler.convert2record(ocr_list, level_list)
+        record_list_new_all.extend(record_list_temp)
+        record_list_temp.clear()
+
+    print(f"main.py 处理图片{img_abspath}完成，共得到{len(record_list_new_all)}条记录。")
+    record_list = g_record_handler.mergeRecord(record_list_new_all, record_list_old_all)
+    ret = g_img_handler.saverecored(record_list, data_abspath, 'w')
+    if ret == 0:
+        print(f"保存{name}记录数据文件成功。")
+    else:
+        print(f"保存{name}记录数据文件失败。")
+    # 清空图片文件夹
+    cleanfiles(img_abspath)
+    print(f"完成处理{name}记录的获取。")
+
+    return ret
+
 def bakfile(srcfile, bakpath):
     """
     备份文件
