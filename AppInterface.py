@@ -1,6 +1,7 @@
-from PyQt6.QtCore import Qt, pyqtSignal, pyqtSlot, QThread
-from PyQt6.QtGui import QPaintEvent, QPainter, QFont, QColor
-from PyQt6.QtWidgets import QWidget, QStyleOption, QStyle, QVBoxLayout, QLabel, QHBoxLayout, QFrame, QComboBox, QListWidgetItem
+from typing import Dict, List, Optional, Tuple
+from PyQt6.QtCore import Qt, pyqtSignal, QThread
+from PyQt6.QtGui import QFont, QColor
+from PyQt6.QtWidgets import QFrame, QVBoxLayout, QHBoxLayout, QLabel, QListWidgetItem, QComboBox
 
 from qfluentwidgets import ListWidget, PushButton, CheckBox
 
@@ -9,10 +10,18 @@ import PoolInfo
 
 
 class PoolBox(QFrame):
-    name: str = 'unknown'
-    name_ch: str = '未知'
-    index: int = 0
-    stands: list = []
+    """卡池信息展示组件"""
+
+    # 类常量
+    POOL_THRESHOLDS = {
+        0: 100,  # 限定角色特选
+        1: 80,  # 限定武器特选
+        2: 80,  # 限定角色
+        3: 60,  # 限定武器
+        4: 80,  # 常驻角色
+        5: 60,  # 常驻武器
+        6: 50  # 新手池
+    }
     signal_update_info = pyqtSignal(int)
 
     def __init__(self, parent=None, text: str = 'default', index: int = 0):
