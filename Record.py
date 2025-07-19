@@ -54,7 +54,7 @@ class RecordHandler:
                         print(f"Invalid line format: {line}")
                         continue
                     record = Record(items[0], items[1], items[2], int(items[3]))
-                    record = self.correctcontent(record)
+                    # record = self.correctcontent(record)
                     record_list.append(record)
         except FileNotFoundError:
             print(f"文件 {filename} 不存在")
@@ -74,7 +74,7 @@ class RecordHandler:
                     try:
                         item = json.loads(line)
                         record = Record(item['name'], item['type'], item['date'], item['rarity'])
-                        record = self.correctcontent(record)
+                        # record = self.correctcontent(record)
                         record_list.append(record)
                     except json.JSONDecodeError:
                         print(f"JSON解析失败: {line}")
@@ -160,7 +160,7 @@ class RecordHandler:
 
     def mergeRecord(self, record_list_new: list, record_list_old: list):
         """
-        合并两个记录列表，剔除重复记录
+        合并两个记录列表，剔除重复记录 列表 从新往旧排列
         :param record_list_new:新列表
         :param record_list_old:老列表
         :return:合并后的列表
@@ -169,43 +169,60 @@ class RecordHandler:
             print(f"输入列表有空，newlistlen({len(record_list_new)}) or oldlistlen({len(record_list_old)})")
             return record_list_new + record_list_old
 
-        # new_list的最后一条记录时间大于old_list的最后一条记录时间，则直接合并
-        # new_list的最后一条记录时间小于old_list的最后一条记录时间，则直接返回new_list
+        # new_list的最后一条记录时间大于old_list的新一条记录时间，则直接合并
         if record_list_new[-1].date > record_list_old[0].date:
-            print("新列表和老列表时间段不重叠，直接返回和")
+            print("新列表和老列表时间段不重叠，直接返回合并后的列表")
             return record_list_new + record_list_old
-        elif record_list_new[-1].date < record_list_new[-1].date:
-            print("新列表已覆盖老列表时间段记录，请检查输入")
-            return record_list_new
 
-        # 预期可以在list1中找到list2的第一条记录，然后将list2的记录插入到list1的对应位置
-        index = 0xffff
-        mate_index = 0
-        mate_count = 1 # 需要匹配的记录数
-        for i, record in enumerate(record_list_new):
-            if record == record_list_old[mate_index]:
-                mate_index += 1
-                if mate_index >= mate_count:
-                    index = i
-                    break
+        # 新列表和老列表时间段重叠，则合并 （记录可能有重复的）
+        # new｛9，8，8,7，6，5，4｝ 和 old ｛5，4, 4，3，2，1，0｝
+        # merge ｛9，8，8，7，6，5，4，4，3，2，1，0｝
+        record_list_new = copy.deepcopy(record_list_new)
+        record_list_old = copy.deepcopy(record_list_old)
+        record_list_new.reverse()
+        record_list_old.reverse()
+        record_list = []
+        record_list += record_list_old
+        idx = 0
+        for record, index in zip(record_list_new, range(len(record_list_new))):
+            if record not in record_list_old:
+                record_list.append(record)
             else:
-                mate_index = 0
-                if record == record_list_old[mate_index]:
-                    mate_index += 1
+                idx = index
+        print(f"合并成功，新列表有{len(record_list_new)}条记录，老列表有{len(record_list_old)}条记录，从新列表第{idx + 1}条开始重复，合并后有{len(record_list)}条记录")
+        record_list.reverse()
+        return record_list
 
-        if index != 0xffff:
-            record_list = record_list_new[:index - mate_index + 1] + record_list_old
-            print(f"合并成功，从新列表第{index + 1}条开始重复，合并后有{len(record_list)}条记录")
-            return record_list
-        elif mate_index == 0:
-            print("未找到匹配的记录, 请检查输入")
-            return None
-        elif index == 0xffff and mate_index <= mate_count:
-            record_list = record_list_new[:-mate_index] + record_list_old
-            print(f"合并成功，从新列表倒数第{mate_index}条开始重复，合并后有{len(record_list)}条记录")
-            return record_list
-        else:
-            print("输入列表有误")
+
+
+        # # 预期可以在list1中找到list2的第一条记录，然后将list2的记录插入到list1的对应位置
+        # index = 0xffff
+        # mate_index = 0
+        # mate_count = 1 # 需要匹配的记录数
+        # for i, record in enumerate(record_list_new):
+        #     if record == record_list_old[mate_index]:
+        #         mate_index += 1
+        #         if mate_index >= mate_count:
+        #             index = i
+        #             break
+        #     else:
+        #         mate_index = 0
+        #         if record == record_list_old[mate_index]:
+        #             mate_index += 1
+        #
+        # if index != 0xffff:
+        #     record_list = record_list_new[:index - mate_index + 1] + record_list_old
+        #     print(f"合并成功，从新列表第{index + 1}条开始重复，合并后有{len(record_list)}条记录")
+        #     return record_list
+        # elif mate_index == 0:
+        #     print("未找到匹配的记录, 请检查输入")
+        #     return None
+        # elif index == 0xffff and mate_index <= mate_count:
+        #     record_list = record_list_new[:-mate_index] + record_list_old
+        #     print(f"合并成功，从新列表倒数第{mate_index}条开始重复，合并后有{len(record_list)}条记录")
+        #     return record_list
+        # else:
+        #     print("输入列表有误")
         return None
 
 

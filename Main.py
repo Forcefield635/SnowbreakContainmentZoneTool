@@ -190,7 +190,7 @@ def generateRecordDict(name):
     cleanfiles(img_abspath)
     picnum = controlengine.saveRecordImg(name)
     print(f"保存{picnum}张{name}记录截图。")
-    controlengine.goHome()
+    # controlengine.goHome()  # 返回主界面
 
     # 备份并清空数据文件
     data_abspath = os.path.join(os.path.abspath('./data'), f'{name}.txt')
@@ -219,6 +219,10 @@ def generateRecordDict(name):
 
     print(f"main.py 处理图片{img_abspath}完成，共得到{len(record_list_new_all)}条记录。")
     record_list = g_record_handler.mergeRecord(record_list_new_all, record_list_old_all)
+    if record_list is None or len(record_list) == 0:
+        print(f"合并失败 没有新的{name}记录。")
+        cleanfiles(img_abspath)
+        return 2
     ret = g_img_handler.saverecored(record_list, data_abspath, 'w')
     if ret == 0:
         print(f"保存{name}记录数据文件成功。")

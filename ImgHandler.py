@@ -130,7 +130,7 @@ class ImgHandler:
             level = level_list[i]
             record = Record(name, type, date, level)
 
-            # record = rh.correctcontent(record)  # 内容纠错
+            record = rh.correctcontent(record)  # 内容纠错
             record_list.append(record)
 
         print(f'data handle finished. record list len:{len(record_list)}')

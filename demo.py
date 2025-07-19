@@ -80,8 +80,8 @@ class MainWindow(MSFluentWindow):
     def _center_window(self) -> None:
         """将窗口居中显示"""
         screen_geometry = QGuiApplication.primaryScreen().availableGeometry()
-        x = (screen_geometry.width() - self.width()) // 2
-        y = (screen_geometry.height() - self.height()) // 2
+        x = (screen_geometry.width() - self.width()) // 3
+        y = (screen_geometry.height() - self.height()) // 3
         self.move(x, y)
 
 
