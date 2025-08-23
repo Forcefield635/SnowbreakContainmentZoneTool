@@ -107,6 +107,7 @@ class ImgHandler:
         :param level_list: ocr识别返回的等级列表
         :return: list[Record]
         """
+        rh = RecordHandler()  # 定义 RecordHandler 实例
         record_list = []
         if ocr_lists is None:
             return record_list
