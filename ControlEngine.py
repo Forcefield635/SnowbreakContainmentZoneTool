@@ -197,7 +197,7 @@ class ControlEngine:
             pyautogui.screenshot('./pic/temp/cur_number_%02d.png' % i, region=slippage_box)
 
             # 定位向下按钮，点击翻页
-            pos = get_img_box('./template/down.png', 1, (2179, 752, 86, 100))
+            pos = get_img_box('./template/down3.png', 0.8, (2179, 752, 100, 150))
             if pos is not None:
                 auto_click(pyautogui.center(pos), 0.2)
 

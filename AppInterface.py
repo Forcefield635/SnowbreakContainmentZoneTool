@@ -288,7 +288,7 @@ class SummaryBox(QFrame):
 
         # 加一个勾选框，设置查询方式，1 从界面开始查，0 从记录还是查
         self.checkbox_query_type = CheckBox("查询方式", parent=self)
-        self.checkbox_query_type.setChecked(True)
+        self.checkbox_query_type.setChecked(False)
         self.selectLayout = QHBoxLayout()
         self.selectLayout.addWidget(self.combobox)
         self.selectLayout.addWidget(self.button_queryRecord)
